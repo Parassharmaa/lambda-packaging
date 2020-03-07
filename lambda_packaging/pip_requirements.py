@@ -13,19 +13,21 @@ class PipRequirements:
     Installs requirements.txt in .plp/requirements/ folder
     """
 
-    def __init__(self,
-                 resource_name,
-                 project_root,
-                 requirements_path,
-                 no_deploy=[],
-                 dockerize=False,
-                 runtime="python3.6",
-                 target_folder='.plp/',
-                 install_folder='requirements/',
-                 docker_image="lambci/lambda",
-                 container_path="/io"):
+    def __init__(
+        self,
+        resource_name,
+        project_root,
+        requirements_path,
+        no_deploy=[],
+        dockerize=False,
+        runtime="python3.6",
+        target_folder=".plp/",
+        install_folder="requirements/",
+        docker_image="lambci/lambda",
+        container_path="/io",
+    ):
         self.resource_name = resource_name
-        self.pip_cmd = ['pip', 'install', '-r']
+        self.pip_cmd = ["pip", "install", "-r"]
         self.project_root = project_root
         self.no_deploy = no_deploy
         self.runtime = runtime
@@ -36,11 +38,9 @@ class PipRequirements:
         self.container_path = container_path
 
         self.target_requirements_path = path.join(
-            self.project_root, self.target_folder, 'requirements.txt'
+            self.project_root, self.target_folder, "requirements.txt"
         )
-        self.requirements_path = os.path.join(
-            self.project_root, requirements_path
-        )
+        self.requirements_path = os.path.join(self.project_root, requirements_path)
         self.install_path = path.join(self.project_root, self.install_folder)
 
         if not os.path.isdir(self.install_path):
@@ -51,15 +51,15 @@ class PipRequirements:
         Parses requirements and add requirements.txt in .plp folder    
         """
         requirements = self.filter_requirements()
-        with open(self.target_requirements_path, 'w') as f:
+        with open(self.target_requirements_path, "w") as f:
             for k in requirements:
-                f.write(f'{requirements[k]}\n')
+                f.write(f"{requirements[k]}\n")
 
     def filter_requirements(self):
         """
         Filter requirements from mentioned no_deploy paramter
         """
-        with open(self.requirements_path, 'r') as f:
+        with open(self.requirements_path, "r") as f:
             requirements = {r.name: r.line for r in req.parse(f)}
         pulumi.log.info(self.requirements_path)
         pulumi.log.info(json.dumps(requirements))
@@ -72,21 +72,27 @@ class PipRequirements:
 
     def dockerize_pip(self):
 
-        self.image = RemoteImage(format_resource_name('python-runtime'),
-                                 name=self.docker_image,
-                                 keep_locally=True)
+        self.image = RemoteImage(
+            format_resource_name("python-runtime"),
+            name=self.docker_image,
+            keep_locally=True,
+        )
 
         # docker cmd to run in the container
         container_run_cmd = f'"cd {self.container_path}; pip install -r requirements.txt -t {path.join(self.install_folder)}"'
 
         # run container and install requirements
-        self.container = Container(format_resource_name('docker-container'),
-                                   image=self.image.name,
-                                   command=["bash", "-c", container_run_cmd],
-                                   volumes=[{
-                                       'containerPath': self.container_path,
-                                       'hostPath': path.join(self.project_root, self.target_folder)
-                                   }])
+        self.container = Container(
+            format_resource_name("docker-container"),
+            image=self.image.name,
+            command=["bash", "-c", container_run_cmd],
+            volumes=[
+                {
+                    "containerPath": self.container_path,
+                    "hostPath": path.join(self.project_root, self.target_folder),
+                }
+            ],
+        )
 
     def install_requirements(self):
         """
@@ -97,6 +103,6 @@ class PipRequirements:
             self.dockerize_pip()
         else:
             self.pip_cmd.append(self.target_requirements_path)
-            self.pip_cmd.append('--upgrade')
-            self.pip_cmd.append(f'--target={self.install_path}')
+            self.pip_cmd.append("--upgrade")
+            self.pip_cmd.append(f"--target={self.install_path}")
             subprocess.run(self.pip_cmd)

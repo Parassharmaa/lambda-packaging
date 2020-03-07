@@ -3,7 +3,12 @@ import glob
 import os
 import pulumi
 from os import path
+import stat
+import fnmatch
 from .utils import format_resource_name, format_file_name
+
+
+IGNORE_PATTERNS = ['*.py[c|o]', '*/__pycache__*', '*.dist-info*']
 
 
 class ZipPackage:
@@ -18,7 +23,7 @@ class ZipPackage:
                  exclude=[],
                  target_folder='.plp/',
                  install_folder='requirements/'
-                 ):        
+                 ):
         self.resource_name = resource_name
         self.project_root = project_root
         self.target_folder = target_folder
@@ -81,7 +86,8 @@ class ZipPackage:
         """
         requirement_files = glob.glob(os.path.join(
             self.installed_requirements, '**'), recursive=True)
-        requirements_zip_path = self.get_path(format_file_name(self.resource_name, 'requirements.zip'))
+        requirements_zip_path = self.get_path(
+            format_file_name(self.resource_name, 'requirements.zip'))
         self._add_files(requirements_zip_path, requirement_files,
                         base_path=self.installed_requirements)
         return requirements_zip_path
@@ -91,9 +97,30 @@ class ZipPackage:
         Utility function to add new files in existing/new zip
         """
         zip_file = zipfile.ZipFile(zip_path, mode)
-        for file in files:
-            zip_file.write(file, os.path.relpath(file, base_path))
+
+        for file in sorted(files):
+            if self.is_file_allowed(file):
+                zip_path = os.path.relpath(file, base_path)
+                permission = 0o555 if os.access(file, os.X_OK) else 0o444
+                zip_info = zipfile.ZipInfo.from_file(file, zip_path)
+                zip_info.date_time = (2020, 1, 1, 0, 0, 0)
+                zip_info.external_attr = (stat.S_IFREG | permission) << 16
+
+                if os.path.isfile(file):
+                    with open(file, "rb") as fp:
+                        zip_file.writestr(
+                            zip_info,
+                            fp.read(),
+                            compress_type=zipfile.ZIP_DEFLATED
+                        )
+
         zip_file.close()
+
+    def is_file_allowed(self, file_name):
+        for pattern in IGNORE_PATTERNS:
+            if fnmatch.fnmatch(file_name, pattern):
+                return False
+        return True
 
     def _inject_requirements(self):
         """

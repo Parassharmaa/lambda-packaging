@@ -5,5 +5,4 @@ pulumi_docker==1.2.0
 requirements-parser==0.2.0
 
 # Code quality
-pylint==2.4.4
-autopep8==1.4.4
+black
