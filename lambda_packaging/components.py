@@ -32,7 +32,7 @@ class LambdaPackage(pulumi.ComponentResource):
         exclude=[],
         install_folder="requirements/",
         container_path="/io",
-        target_folder=".plp",
+        target_folder="dist/",
         docker_image="lambci/lambda",
         opts=None,
     ):

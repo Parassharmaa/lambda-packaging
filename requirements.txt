@@ -6,3 +6,4 @@ requirements-parser==0.2.0
 
 # Code quality
 black
+pylint==2.4.4
