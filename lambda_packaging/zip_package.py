@@ -4,11 +4,12 @@ import os
 import pulumi
 from os import path
 import stat
+from pathlib import Path
 import fnmatch
 from .utils import format_resource_name, format_file_name
 
 # Files pattern to ignore for deterministic zip archive
-IGNORE_PATTERNS = ["*.py[c|o]", "*/__pycache__*", "*.dist-info*"]
+IGNORE_PATTERNS = ["*.py[c|o]", "*/__pycache__*", "__pycache__*", "*.dist-info*"]
 
 
 class ZipPackage:
@@ -26,17 +27,17 @@ class ZipPackage:
         install_folder="requirements/",
     ):
         self.resource_name = resource_name
-        self.project_root = project_root
-        self.target_folder = target_folder
-        self.install_folder = path.join(target_folder, install_folder)
+        self.project_root = Path(project_root)
+        self.target_folder = Path(target_folder)
+        self.install_folder = self.target_folder / install_folder
         self.zipfile_name = format_file_name(resource_name, "lambda.zip")
         self.zip_path = self.get_path(self.zipfile_name)
-        self.include = include
-        self.exclude = exclude
-        self.install_path = path.join(self.project_root, self.install_folder)
+        self.include = include.copy()
+        self.exclude = exclude.copy()
+        self.install_path = self.project_root / self.install_folder
 
-        self.exclude.append(path.join(self.target_folder, "**"))
-        self.installed_requirements = path.join(self.project_root, self.install_folder)
+        self.exclude.append(self.target_folder / "**")
+        self.installed_requirements = self.project_root / self.install_folder
 
         # create temporary directory if not exists
         if not os.path.isdir(self.installed_requirements):
@@ -44,7 +45,7 @@ class ZipPackage:
 
     def get_path(self, file_name):
         """Return absolute file path"""
-        return path.join(self.project_root, self.target_folder, file_name)
+        return self.project_root / self.target_folder / file_name
 
     def _match_glob_files(self, patterns: list):
         """
@@ -53,7 +54,7 @@ class ZipPackage:
         return [
             f
             for pattern in patterns
-            for f in glob.glob(os.path.join(self.project_root, pattern), recursive=True)
+            for f in glob.glob(str(self.project_root / pattern), recursive=True)
         ]
 
     def filter_package(self):
@@ -65,10 +66,13 @@ class ZipPackage:
 
         filtered_package = []
         if "**" in self.exclude:
-            filtered_package = set(self.include_files)
+            if "**" in self.include:
+                filtered_package = []
+            else:
+                filtered_package = set(self.include_files)
         else:
             filtered_package = set(self.include_files) - set(self.exclude_files)
-        return filtered_package
+        return list(filtered_package)
 
     def zip_package(self, requirements=True):
         """
@@ -135,7 +139,7 @@ class ZipPackage:
         Ignore dynamic & redundant files/folders for deterministic zip archive
         """
         for pattern in IGNORE_PATTERNS:
-            if fnmatch.fnmatch(file_name, pattern):
+            if fnmatch.fnmatch(Path(file_name), pattern):
                 return False
         return True
 
@@ -144,7 +148,7 @@ class ZipPackage:
         Inject requirements into the package archive.
         """
         requirement_files = glob.glob(
-            os.path.join(self.installed_requirements, "**"), recursive=True
+            str(self.installed_requirements / "**"), recursive=True
         )
         self._add_files(
             zip_path=self.zip_path,

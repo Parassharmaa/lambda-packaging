@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import Mock, patch, MagicMock, mock_open
+from unittest.mock import patch, Mock, mock_open
 from lambda_packaging.pip_requirements import PipRequirements
 from pathlib import PosixPath
 
@@ -60,8 +60,7 @@ class TestPipRequirements(TestCase):
             PosixPath("dist/requirements"), exist_ok=True
         )
 
-    @patch("__main__.open")
-    def test_generate_requirements_file(self, mock_open):
+    def test_generate_requirements_file(self):
         self.pip.filter_requirements = Mock()
         self.pip.filter_requirements.return_value = filtered_requirements
 
@@ -104,8 +103,7 @@ class TestPipRequirements(TestCase):
                     self.pip.install_requirements()
                     dockerize.assert_not_called()
 
-            with patch.object(self.pip, "dockerize") as is_docker:
-                is_docker = True
+            with patch.object(self.pip, "dockerize", True):
                 with patch.object(self.pip, "dockerize_pip") as dockerize:
                     self.pip.install_requirements()
                     dockerize.assert_called()
@@ -114,9 +112,6 @@ class TestPipRequirements(TestCase):
     @patch("lambda_packaging.pip_requirements.Container")
     @patch("lambda_packaging.pip_requirements.format_resource_name")
     def test_dockerize_pip(self, mock_resource_name, mock_container, mock_remote_image):
-
-        docker_cmd = "cd /io; pip install -r requirements.txt -t dist/requirements"
-
         self.pip.dockerize_pip()
         mock_remote_image.assert_called_with(
             mock_resource_name("python-runtime"),
@@ -130,5 +125,3 @@ class TestPipRequirements(TestCase):
         expected_cmd = '''"cd /io; pip install -r requirements.txt -t dist/requirements"'''
         self.assertEqual(self.pip.docker_cmd(), expected_cmd)
 
-if __name__ == "__main__":
-    unittest.main()
