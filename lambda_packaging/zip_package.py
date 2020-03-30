@@ -116,7 +116,7 @@ class ZipPackage:
 
                 zip_info = zipfile.ZipInfo.from_file(file, zip_path)
 
-                # set condistent date info for the file
+                # set consistent date info for the file
                 zip_info.date_time = (2020, 1, 1, 0, 0, 0)
 
                 # set files permission

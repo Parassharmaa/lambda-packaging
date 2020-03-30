@@ -37,7 +37,9 @@ class PipRequirements:
         self.docker_image = docker_image
         self.container_path = container_path
 
-        self.target_requirements_path = self.project_root / self.target_folder / "requirements.txt"
+        self.target_requirements_path = (
+            self.project_root / self.target_folder / "requirements.txt"
+        )
         self.requirements_path = self.project_root / requirements_path
         self.install_path = self.project_root / self.install_folder
 
@@ -67,22 +69,22 @@ class PipRequirements:
                 pass
         return requirements
 
-    def dockerize_pip(self):
+    def docker_cmd(self):
+        """Docker cmd to run in the container"""
+        return f'"cd {self.container_path}; pip install -r requirements.txt -t {os.path.join(self.install_folder)}"'
 
+    def dockerize_pip(self):
         image = RemoteImage(
             format_resource_name("python-runtime"),
             name=self.docker_image,
             keep_locally=True,
         )
 
-        # docker cmd to run in the container
-        container_run_cmd = f'"cd {self.container_path}; pip install -r requirements.txt -t {os.path.join(self.install_folder)}"'
-
         # run container and install requirements
         self.container = Container(
             format_resource_name("docker-container"),
             image=image.name,
-            command=["bash", "-c", container_run_cmd],
+            command=["bash", "-c", self.docker_cmd],
             volumes=[
                 {
                     "containerPath": self.container_path,
@@ -99,6 +101,6 @@ class PipRequirements:
         if self.dockerize:
             self.dockerize_pip()
         else:
-            self.pip_cmd.append(self.target_requirements_path)
+            self.pip_cmd.append(str(self.target_requirements_path))
             self.pip_cmd.append(f"--target={self.install_path}")
             subprocess.run(self.pip_cmd)

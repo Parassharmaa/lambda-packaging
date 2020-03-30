@@ -73,3 +73,8 @@ pulumi.export("layer_archive_path", lambda_package.layer_archive_path)
 ```bash
 $ pulumi up
 ```
+
+### Run Tests
+```
+$ python3 -m unittest discover
+```

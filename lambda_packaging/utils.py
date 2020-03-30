@@ -1,9 +1,6 @@
 import base64
 import hashlib
-
 import pulumi
-
-config = pulumi.Config()
 
 
 def format_resource_name(name):
