@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch, Mock, mock_open
 from lambda_packaging.pip_requirements import PipRequirements
 from pathlib import PosixPath
+import sys
 
 actual_requirements = """
 # Pulumi
@@ -48,7 +49,7 @@ class TestPipRequirements(TestCase):
 
     def test_init(self):
         self.assertEqual(self.pip.resource_name, "test-pip-requirements")
-        self.assertEqual(self.pip.pip_cmd, ["pip", "install", "-r"])
+        self.assertEqual(self.pip.pip_cmd, [sys.executable, "-m", "pip", "install", "-r"])
         self.assertEqual(self.pip.install_folder.__str__(), "dist/requirements")
         self.assertEqual(
             self.pip.target_requirements_path.__str__(), "dist/requirements.txt"
@@ -84,6 +85,8 @@ class TestPipRequirements(TestCase):
 
     def test_install_requirements(self):
         expected_cmd = [
+            sys.executable, 
+            "-m",
             "pip",
             "install",
             "-r",
@@ -97,7 +100,7 @@ class TestPipRequirements(TestCase):
             ) as mock_subprocess:
                 self.pip.install_requirements()
                 generate_file.assert_called()
-                mock_subprocess.assert_called_with(expected_cmd)
+                mock_subprocess.assert_called_with(expected_cmd, stdout=-1, stderr=-1)
 
                 with patch.object(self.pip, "dockerize_pip") as dockerize:
                     self.pip.install_requirements()

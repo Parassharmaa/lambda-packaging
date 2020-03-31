@@ -93,8 +93,8 @@ class LambdaPackage(pulumi.ComponentResource):
         self.layer_hash = None
 
         if layer:
-            self.package_archive = packaged_asset.zip_package(requirements=False)
-            self.layer_archive_path = packaged_asset.zip_requirements()
+            self.package_archive = str(packaged_asset.zip_package(requirements=False))
+            self.layer_archive_path = str(packaged_asset.zip_requirements())
 
             self.package_hash = filebase64sha256(self.package_archive)
             self.layer_hash = filebase64sha256(self.layer_archive_path)
@@ -109,7 +109,7 @@ class LambdaPackage(pulumi.ComponentResource):
                 }
             )
         else:
-            self.package_archive = packaged_asset.zip_package()
+            self.package_archive = str(packaged_asset.zip_package())
             self.package_hash = filebase64sha256(self.package_archive)
             # output archive path and lambda layer resource
             self.register_outputs(

@@ -1,6 +1,7 @@
 import requirements as req
 import subprocess
 import os
+import sys
 from pathlib import Path
 import pulumi
 import json
@@ -27,7 +28,7 @@ class PipRequirements:
         container_path="/io",
     ):
         self.resource_name = resource_name
-        self.pip_cmd = ["pip", "install", "-r"]
+        self.pip_cmd = [sys.executable, "-m", "pip", "install", "-r"]
         self.project_root = Path(project_root)
         self.no_deploy = no_deploy
         self.runtime = runtime
@@ -103,4 +104,4 @@ class PipRequirements:
         else:
             self.pip_cmd.append(str(self.target_requirements_path))
             self.pip_cmd.append(f"--target={self.install_path}")
-            subprocess.run(self.pip_cmd)
+            subprocess.run(self.pip_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
