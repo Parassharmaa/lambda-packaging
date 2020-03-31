@@ -14,7 +14,7 @@ install_requires = [
 
 setup(
     name="lambda_packaging",
-    version="0.4.1",
+    version="0.4.2",
     description="Pulumi-based python solution for Packaging an AWS Lambda and its Layer.",
     long_description=long_description,
     long_description_content_type="text/markdown",
