@@ -5,7 +5,6 @@ import pulumi
 import shutil
 from pathlib import Path
 
-
 class ResourceMock(pulumi.runtime.Mocks):
     def call(self, token, args, provider):
         return {}
@@ -16,6 +15,8 @@ class ResourceMock(pulumi.runtime.Mocks):
 
 pulumi.runtime.set_mocks(ResourceMock())
 
+
+# test outputs of expected zipfiles hash
 test_hash_1 = "pkTEi+w+/P3ThNx31BdzMK1GVfBXvfdwTF8+uUkDlUQ="
 test_hash_2 = "fgPhqs9YpRQvT1dXXiy4w+T0AFSGkjNpdFVeLtggujQ="
 test_hash_3 = "Qn6WRrkmRHVgcOqY1QREst0Q4Y9mIuoXd9op3OMQI6w="
@@ -33,10 +34,13 @@ class TestComponents(TestCase):
                 requirements_path="requirements_test_1.txt",
             )
 
+            # verify archive path
             self.assertEqual(
                 lambda_package.package_archive,
                 "tests/data/dist/stack-example-test-lambda.zip",
             )
+
+            # verify archive hash
             self.assertEqual(
                 lambda_package.package_hash, test_hash_1,
             )
@@ -52,17 +56,22 @@ class TestComponents(TestCase):
                 requirements_path="requirements_test_1.txt",
             )
 
+            # verify package archive path
             self.assertEqual(
                 lambda_package.package_archive,
                 "tests/data/dist/stack-example-test-lambda.zip",
             )
 
+            #verify layer archive path
             self.assertEqual(
                 lambda_package.layer_archive_path,
                 "tests/data/dist/stack-example-test-requirements.zip",
             )
-            self.assertEqual(lambda_package.package_hash, test_hash_2)
 
+            # verify package hash
+            self.assertEqual(lambda_package.package_hash, test_hash_2)
+            
+            # verify layer archive hash
             self.assertEqual(lambda_package.layer_hash, test_hash_3)
 
     @pulumi.runtime.test
@@ -97,9 +106,9 @@ class TestComponents(TestCase):
                     requirements_path="requirements_test_1.txt",
                 )
 
-                # asert archive hash not equal to detenmined hash
+                # verify archive hash not equal to detenmined hash
                 self.assertNotEqual(lambda_package.package_hash, test_hash_2)
 
     def tearDown(self):
-        # deletes the created assets after each test is run
+        # delete the generated files & directories after each test is run
         shutil.rmtree("tests/data/dist/", ignore_errors=True)

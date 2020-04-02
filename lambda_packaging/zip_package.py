@@ -64,16 +64,15 @@ class ZipPackage:
         """
         Filters files based on exclude and include option
         """
+        self.exclude = [str(Path(p)) for p in self.exclude]
+        self.include = [str(Path(p)) for p in self.include]
         self.exclude_files = self._match_glob_files(self.exclude)
         self.include_files = self._match_glob_files(self.include)
 
         filtered_package = []
-        if "**" in self.exclude:
-            if "**" in self.include:
-                filtered_package = []
-            else:
-                filtered_package = set(self.include_files)
-        else:
+        if "**" in self.exclude and "**" not in self.include:
+            filtered_package = set(self.include_files)
+        elif "**" not in self.exclude:
             filtered_package = set(self.include_files) - set(self.exclude_files)
         return list(filtered_package)
 

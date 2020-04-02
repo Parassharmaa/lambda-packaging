@@ -4,6 +4,8 @@ from lambda_packaging.pip_requirements import PipRequirements
 from pathlib import PosixPath
 import sys
 
+
+# test inputs and outputes of sample requirements
 actual_requirements = """
 # Pulumi
 pulumi==1.8.1
@@ -37,6 +39,7 @@ requirements-parser==0.2.0
 class TestPipRequirements(TestCase):
     @patch("lambda_packaging.pip_requirements.os")
     def setUp(self, mock_os):
+        # setup PipRequirements Object and mock os
         mock_os.path.isdir.return_value = False
         self.pip = PipRequirements(
             resource_name="test-pip-requirements",
@@ -48,6 +51,7 @@ class TestPipRequirements(TestCase):
         self.mock_os = mock_os
 
     def test_init(self):
+        # verify value of instanace variables
         self.assertEqual(self.pip.resource_name, "test-pip-requirements")
         self.assertEqual(self.pip.pip_cmd, [sys.executable, "-m", "pip", "install", "-r"])
         self.assertEqual(self.pip.install_folder.__str__(), "dist/requirements")
@@ -65,6 +69,7 @@ class TestPipRequirements(TestCase):
         self.pip.filter_requirements = Mock()
         self.pip.filter_requirements.return_value = filtered_requirements
 
+        # verify the creation of parsed requirements.txt
         with patch(
             "lambda_packaging.pip_requirements.open", mock_open()
         ) as mocked_file:
@@ -81,6 +86,7 @@ class TestPipRequirements(TestCase):
             requirements = self.pip.filter_requirements()
             mocked_file.assert_called_once_with(PosixPath("requirements.txt"), "r")
 
+        # assert the outpur requirements parsing
         self.assertEqual(requirements, filtered_requirements)
 
     def test_install_requirements(self):
@@ -98,6 +104,7 @@ class TestPipRequirements(TestCase):
             with patch(
                 "lambda_packaging.pip_requirements.subprocess.run"
             ) as mock_subprocess:
+            # verify the pip installation process
                 self.pip.install_requirements()
                 generate_file.assert_called()
                 mock_subprocess.assert_called_with(expected_cmd, stdout=-1, stderr=-1)
@@ -107,6 +114,7 @@ class TestPipRequirements(TestCase):
                     dockerize.assert_not_called()
 
             with patch.object(self.pip, "dockerize", True):
+                # verify dockerize() when docker=True
                 with patch.object(self.pip, "dockerize_pip") as dockerize:
                     self.pip.install_requirements()
                     dockerize.assert_called()
@@ -125,6 +133,7 @@ class TestPipRequirements(TestCase):
         mock_container.assert_called_once()
 
     def test_docker_cmd(self):
+        # assert docker command output
         expected_cmd = '''"cd /io; pip install -r requirements.txt -t dist/requirements"'''
         self.assertEqual(self.pip.docker_cmd(), expected_cmd)
 
