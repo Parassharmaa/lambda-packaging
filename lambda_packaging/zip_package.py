@@ -11,6 +11,9 @@ from .utils import format_resource_name, format_file_name
 # Files pattern to ignore for deterministic zip archive
 IGNORE_PATTERNS = ["*.py[c|o]", "*/__pycache__*", "__pycache__*", "*.dist-info*"]
 
+# Constand DateTime
+CONST_DATETIME = (2020, 1, 1, 0, 0, 0)
+
 
 class ZipPackage:
     """
@@ -113,17 +116,10 @@ class ZipPackage:
         for file in filter(self.is_file_allowed, sorted(files)):
             zip_path = os.path.relpath(file, base_path)
 
-            # consistent file permission
-            # if file is executable set it to -r-xr-xr-x else -r--r--r--
-            permission = 0o555 if os.access(file, os.X_OK) else 0o444
-
             zip_info = zipfile.ZipInfo.from_file(file, zip_path)
 
             # set consistent date info for the file
-            zip_info.date_time = (2020, 1, 1, 0, 0, 0)
-
-            # set files permission
-            zip_info.external_attr = (stat.S_IFREG | permission) << 16
+            zip_info.date_time = CONST_DATETIME
 
             if os.path.isfile(file):
                 with open(file, "rb") as fp:
